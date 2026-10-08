@@ -1,0 +1,49 @@
+name: DotSync
+options:
+  bundleIdPrefix: fr.vincentlauriat
+  developmentLanguage: fr
+  deploymentTarget:
+    macOS: "14.0"
+
+# Explicit scheme (otherwise xcodegen does not generate one and it is lost on every regeneration).
+schemes:
+  DotSync:
+    build:
+      targets:
+        DotSync: all
+    run:
+      config: Debug
+
+targets:
+  DotSync:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: DotSync
+        excludes:
+          - "Info.plist"
+    settings:
+      base:
+        PRODUCT_NAME: DotSync
+        PRODUCT_BUNDLE_IDENTIFIER: fr.vincentlauriat.dotsync
+        SWIFT_VERSION: "5.9"
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+    info:
+      path: DotSync/Info.plist
+      properties:
+        CFBundleName: DotSync
+        CFBundleDevelopmentRegion: fr
+        CFBundleDisplayName: DotSync
+        CFBundleIdentifier: fr.vincentlauriat.dotsync
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        LSMinimumSystemVersion: "14.0"
+        LSUIElement: true          # menu bar only, no Dock icon
+        NSHumanReadableCopyright: "© 2026 Vincent Lauriat"
