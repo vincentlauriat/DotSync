@@ -1,8 +1,10 @@
 import ServiceManagement
+import Sparkle
 import SwiftUI
 
 struct MenuView: View {
     let service: DotService
+    let updater: SPUUpdater
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
@@ -126,6 +128,7 @@ struct MenuView: View {
                 Button("Dossier") { open(DotService.repo.path) }
                 Button("GitHub") { NSWorkspace.shared.open(URL(string: "https://github.com/vincentlauriat/dotfiles")!) }
                 Spacer()
+                Button("Mises à jour…") { updater.checkForUpdates() }
                 Button("Quitter") { NSApp.terminate(nil) }.keyboardShortcut("q")
             }
             .controlSize(.small)

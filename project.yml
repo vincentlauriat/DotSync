@@ -5,6 +5,11 @@ options:
   deploymentTarget:
     macOS: "14.0"
 
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.9.1"
+
 # Explicit scheme (otherwise xcodegen does not generate one and it is lost on every regeneration).
 schemes:
   DotSync:
@@ -23,10 +28,13 @@ targets:
       - path: DotSync
         excludes:
           - "Info.plist"
+    dependencies:
+      - package: Sparkle
     settings:
       base:
         PRODUCT_NAME: DotSync
         PRODUCT_BUNDLE_IDENTIFIER: fr.vincentlauriat.dotsync
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
@@ -47,3 +55,9 @@ targets:
         LSMinimumSystemVersion: "14.0"
         LSUIElement: true          # menu bar only, no Dock icon
         NSHumanReadableCopyright: "© 2026 Vincent Lauriat"
+        SUFeedURL: "https://raw.githubusercontent.com/vincentlauriat/DotSync/main/appcast.xml"
+        # Sparkle key: login keychain account "DotSync" (backup ~/.sparkle-keys). NEVER regenerate.
+        SUPublicEDKey: "tc95v6kdkHLKWo/LR5v/WqiVYAvV7cNIH4oo2f/hIic="
+        SUEnableAutomaticChecks: true
+        SUScheduledCheckInterval: 86400
+        SUAutomaticallyUpdate: false

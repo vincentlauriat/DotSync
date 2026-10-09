@@ -11,10 +11,15 @@ Menu bar app for the `~/.dotfiles` sync (repo `vincentlauriat/dotfiles`).
 | Toggle the 30-min launchd autosync | ✅ |
 | Launch at login (SMAppService) | ✅ |
 | Open log / repo folder / GitHub | ✅ |
+| Automatic updates (Sparkle, daily check) | ✅ |
 
 DotSync holds no logic: it runs `dot status --json` every 60 s and when the menu opens.
 `dot sync` takes a lock, so the button and launchd never run concurrently. The result
 goes to `~/.config/dotfiles/last-sync.json`.
+
+## Install
+
+Download the DMG from [Releases](https://github.com/vincentlauriat/DotSync/releases) (signed and notarized), drag it into Applications. Later versions arrive through Sparkle.
 
 ## Build
 
@@ -34,5 +39,6 @@ DotSync/
 ├── DotService.swift   # runs dot (Process), polling, state
 ├── DotStatus.swift    # Codable mirror of `dot status --json` + health
 └── MenuView.swift     # menu UI
+Scripts/release.sh     # build → sign → DMG → notarize → staple → Sparkle appcast
 project.yml            # XcodeGen
 ```

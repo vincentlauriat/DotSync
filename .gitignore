@@ -42,3 +42,6 @@ CHANGES.md
 TODOS.md
 PLAN.md
 *.zip
+.sparkle-tools/
+release/
+release-run.log
