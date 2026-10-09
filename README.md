@@ -1,5 +1,7 @@
 # DotSync
 
+<img src="docs/icon.png" width="128" alt="DotSync icon">
+
 Menu bar app for the `~/.dotfiles` sync (repo `vincentlauriat/dotfiles`).
 
 | Feature | |
@@ -39,6 +41,7 @@ DotSync/
 ├── DotService.swift   # runs dot (Process), polling, state
 ├── DotStatus.swift    # Codable mirror of `dot status --json` + health
 └── MenuView.swift     # menu UI
+Scripts/make-app-icon.swift  # draws the icon (ring of sync arrows, 4 Macs, central dot)
 Scripts/release.sh     # build → sign → DMG → notarize → staple → Sparkle appcast
 project.yml            # XcodeGen
 ```
