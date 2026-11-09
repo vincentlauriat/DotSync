@@ -9,12 +9,15 @@ final class DotService {
     private(set) var error: String?
     private(set) var isSyncing = false
     private(set) var lastOutput = ""
+    /// Set after a successful `dot uninstall`: polling stops and the menu offers to remove the app.
+    private(set) var uninstalled = false
 
     static let repo = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".dotfiles")
     private var dotScript: URL { Self.repo.appending(path: "dot") }
     private var timer: Timer?
 
     var health: Health {
+        if uninstalled { return .off }
         if isSyncing { return .syncing }
         if error != nil { return .broken }
         return status?.health ?? .broken
@@ -29,6 +32,7 @@ final class DotService {
     }
 
     func refresh() async {
+        guard !uninstalled else { return }
         guard FileManager.default.fileExists(atPath: dotScript.path) else {
             error = "~/.dotfiles/dot introuvable : clone le dépôt dotfiles"
             status = nil
@@ -62,6 +66,26 @@ final class DotService {
     func setAutosync(_ on: Bool) async {
         _ = await run(["autosync", on ? "on" : "off"])
         await refresh()
+    }
+
+    /// `dot uninstall`: links become real files, autosync stops, repo and state go to the Trash.
+    func uninstall(dryRun: Bool, restoreBackups: Bool) async -> (code: Int32, output: String) {
+        var args = ["uninstall"]
+        if dryRun { args.append("--dry-run") }
+        if restoreBackups { args.append("--restore-backups") }
+        if !dryRun { isSyncing = true }   // disables « Synchroniser » while files are being moved
+        let result = await run(args)
+        if !dryRun { isSyncing = false }
+        if !dryRun && result.code == 0 {
+            // only the moves matter afterwards, not the per-path listing
+            lastOutput = result.output.split(separator: "\n").filter { !$0.hasPrefix("  = ") }.joined(separator: "\n")
+            uninstalled = true
+            timer?.invalidate()
+            timer = nil
+            status = nil
+            error = nil
+        }
+        return result
     }
 
     // MARK: - Process

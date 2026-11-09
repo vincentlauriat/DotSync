@@ -14,6 +14,7 @@ Menu bar app for the `~/.dotfiles` sync (repo `vincentlauriat/dotfiles`).
 | Launch at login (SMAppService) | ✅ |
 | Open log / repo folder / GitHub | ✅ |
 | Automatic updates (Sparkle, daily check) | ✅ |
+| "Désinstaller les dotfiles de ce Mac…" — runs `dot uninstall` after a dry-run preview | ✅ |
 
 DotSync holds no logic: it runs `dot status --json` every 60 s and when the menu opens.
 `dot sync` takes a lock, so the button and launchd never run concurrently. The result

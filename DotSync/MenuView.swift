@@ -11,7 +11,9 @@ struct MenuView: View {
         VStack(alignment: .leading, spacing: 12) {
             header
             Divider()
-            if let error = service.error {
+            if service.uninstalled {
+                uninstalledView
+            } else if let error = service.error {
                 Label(error, systemImage: "xmark.octagon").foregroundStyle(.red)
             } else if let status = service.status {
                 details(status)
@@ -30,8 +32,10 @@ struct MenuView: View {
                 }
                 .font(.caption)
             }
-            Divider()
-            actions
+            if !service.uninstalled {
+                Divider()
+                actions
+            }
         }
         .padding(14)
         .frame(width: 320)
@@ -132,9 +136,103 @@ struct MenuView: View {
                 Button("Quitter") { NSApp.terminate(nil) }.keyboardShortcut("q")
             }
             .controlSize(.small)
+            Button("Désinstaller les dotfiles de ce Mac…", role: .destructive) {
+                Task { await confirmUninstall() }
+            }
+            .buttonStyle(.link)
+            .foregroundStyle(.red)
+            .font(.caption)
+            .disabled(service.isSyncing || service.status?.syncing == true || service.error != nil)
         }
         .toggleStyle(.switch)
         .controlSize(.small)
+    }
+
+    // MARK: - Uninstall
+
+    private var uninstalledView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Dotfiles désinstallés de ce Mac", systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+            Text("Les fichiers sont redevenus de vrais fichiers.")
+                .font(.caption).foregroundStyle(.secondary)
+            ScrollView {
+                Text(service.lastOutput)
+                    .font(.system(.caption2, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 120)
+            HStack {
+                Button("Supprimer DotSync") {
+                    NSWorkspace.shared.recycle([Bundle.main.bundleURL]) { _, _ in
+                        DispatchQueue.main.async { NSApp.terminate(nil) }
+                    }
+                }
+                Spacer()
+                Button("Quitter") { NSApp.terminate(nil) }.keyboardShortcut("q")
+            }
+            .controlSize(.small)
+        }
+        .font(.callout)
+    }
+
+    /// Shows the dry run, asks, then runs the real uninstall. The logic lives in `dot uninstall`.
+    private func confirmUninstall() async {
+        let preview = await service.uninstall(dryRun: true, restoreBackups: false)
+        NSApp.activate()
+        guard preview.code == 0 else {
+            let text = preview.code == 2
+                ? "Cette version de ~/.dotfiles/dot ne connaît pas « uninstall » : mets à jour le dépôt dotfiles."
+                : preview.output
+            showResult(title: "Désinstallation impossible pour l'instant", text: text)
+            return
+        }
+        let alert = NSAlert()
+        alert.alertStyle = .critical
+        alert.messageText = "Désinstaller les dotfiles de ce Mac ?"
+        alert.informativeText = "Chaque lien vers ~/.dotfiles redevient un vrai fichier avec son contenu actuel, "
+            + "la synchro auto s'arrête, et ~/.dotfiles, ~/.config/dotfiles (secrets compris) et le journal "
+            + "partent à la Corbeille. Le dépôt GitHub et les autres Macs ne sont pas touchés."
+        alert.accessoryView = outputView(preview.output)
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Restaurer les fichiers sauvegardés par « dot link » (~/.dotfiles-backup)"
+        alert.suppressionButton?.state = .off
+        alert.addButton(withTitle: "Désinstaller")
+        alert.addButton(withTitle: "Annuler")
+        alert.buttons[0].hasDestructiveAction = true
+        alert.buttons[0].keyEquivalent = ""       // Return must not uninstall
+        alert.buttons[1].keyEquivalent = "\r"
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        let restore = alert.suppressionButton?.state == .on
+        let result = await service.uninstall(dryRun: false, restoreBackups: restore)
+        if result.code == 0 {
+            if SMAppService.mainApp.status == .enabled {
+                try? await SMAppService.mainApp.unregister()
+            }
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        } else {
+            showResult(title: "La désinstallation a échoué", text: result.output)
+        }
+    }
+
+    private func showResult(title: String, text: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.accessoryView = outputView(text)
+        alert.runModal()
+    }
+
+    private func outputView(_ text: String) -> NSView {
+        let scroll = NSTextView.scrollableTextView()
+        scroll.frame = NSRect(x: 0, y: 0, width: 460, height: 200)
+        if let textView = scroll.documentView as? NSTextView {
+            textView.string = text
+            textView.isEditable = false
+            textView.font = .monospacedSystemFont(ofSize: 10, weight: .regular)
+        }
+        return scroll
     }
 
     // MARK: - Helpers
@@ -157,6 +255,7 @@ struct MenuView: View {
         case .syncing: .blue
         case .attention: .orange
         case .broken: .red
+        case .off: .secondary
         }
     }
 
