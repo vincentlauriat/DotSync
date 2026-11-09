@@ -118,53 +118,53 @@ mkdir -p "$RELEASE_DIR"
 DMG="$RELEASE_DIR/DotSync-$VERSION.dmg"
 rm -f "$DMG"
 
-# 5b. Build a friendly installer layout: signed .app on the left, /Applications
-# alias on the right, with a background image showing an arrow between them.
+# 5b. DMG with a Finder layout (app left, /Applications alias right, arrow background).
+# dmgbuild writes the .DS_Store itself: no Finder AppleScript, which needs Apple Events
+# and silently ships a DMG without layout when a shell cannot send them.
 DMG_VOLNAME="DotSync $VERSION"
-DMG_LAYOUT_DIR="$STAGING_DIR/dmg-layout"
-mkdir -p "$DMG_LAYOUT_DIR/.background"
-ditto --norsrc --noextattr --noacl "$STAGING" "$DMG_LAYOUT_DIR/DotSync.app"
-ln -s /Applications "$DMG_LAYOUT_DIR/Applications"
-"$ROOT/Scripts/make-dmg-background.swift" "$DMG_LAYOUT_DIR/.background/background.png" >/dev/null
+DMG_BG="$STAGING_DIR/background.png"
+"$ROOT/Scripts/make-dmg-background.swift" "$DMG_BG" >/dev/null
 
-echo "→ Creating writable DMG to configure Finder layout"
-RW_DMG="$STAGING_DIR/temp.dmg"
-hdiutil create -volname "$DMG_VOLNAME" -srcfolder "$DMG_LAYOUT_DIR" \
-  -fs HFS+ -format UDRW -ov "$RW_DMG" >/dev/null
+# dmgbuild and its two dependencies, installed once per requirements file into a
+# private venv, every wheel checked against its pinned hash.
+DMGBUILD_REQS="$ROOT/Scripts/dmgbuild-requirements.txt"
+DMGBUILD_VENV="$ROOT/.dmgbuild-venv/$(shasum -a 256 "$DMGBUILD_REQS" | cut -c1-12)"
+if [ ! -x "$DMGBUILD_VENV/bin/dmgbuild" ]; then
+  echo "→ Installing dmgbuild (one-time)"
+  rm -rf "$DMGBUILD_VENV"
+  python3 -m venv "$DMGBUILD_VENV"
+  "$DMGBUILD_VENV/bin/pip" install --quiet --disable-pip-version-check \
+    --only-binary=:all: --require-hashes -r "$DMGBUILD_REQS"
+fi
 
-DMG_MOUNT=$(hdiutil attach -nobrowse -noverify -noautoopen "$RW_DMG" \
-  | awk -F '\t' 'END {print $NF}')
-echo "→ Mounted at $DMG_MOUNT — applying Finder layout via AppleScript"
+# hdiutil detach can fail with "resource busy". Retry, then force.
+detach_retry() {
+  local mnt="$1" i
+  for i in 1 2 3 4 5; do
+    hdiutil detach "$mnt" -quiet && return 0
+    echo "  …hdiutil detach retry $i/5 ($mnt busy) in 2s" >&2
+    sleep 2
+  done
+  hdiutil detach "$mnt" -force -quiet
+}
+for STALE in "/Volumes/$DMG_VOLNAME" "/Volumes/$DMG_VOLNAME "[0-9]*; do
+  [ -d "$STALE" ] && detach_retry "$STALE"
+done
 
-# Position DotSync.app at (140, 200) and Applications at (400, 200),
-# in a 540 × 380 window. The background paints the arrow between them.
-osascript <<APPLESCRIPT
-tell application "Finder"
-    tell disk "$DMG_VOLNAME"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set the bounds of container window to {200, 100, 740, 480}
-        set view_options to the icon view options of container window
-        set arrangement of view_options to not arranged
-        set icon size of view_options to 128
-        set background picture of view_options to file ".background:background.png"
-        set position of item "DotSync.app" of container window to {140, 200}
-        set position of item "Applications" of container window to {400, 200}
-        update without registering applications
-        delay 1
-        close
-    end tell
-end tell
-APPLESCRIPT
+echo "→ Building $DMG with dmgbuild"
+"$DMGBUILD_VENV/bin/dmgbuild" -s "$ROOT/Scripts/dmg-settings.py" \
+  -D app="$STAGING" -D background="$DMG_BG" \
+  "$DMG_VOLNAME" "$DMG" 2> >(grep -v "is deprecated" >&2) >/dev/null
 
-# Make sure the .DS_Store is flushed before unmounting
-sync
-hdiutil detach "$DMG_MOUNT" -quiet
-
-echo "→ Converting RW DMG to compressed read-only $DMG"
-hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG" >/dev/null
+# The layout is deterministic, so a missing piece is a bug: check it before notarizing.
+CHECK_MOUNT="$(hdiutil attach -nobrowse -readonly -noverify -noautoopen "$DMG" | awk -F '\t' 'END {print $NF}')"
+LAYOUT_OK=1
+for ITEM in .DS_Store .background.png Applications DotSync.app; do
+  [ -e "$CHECK_MOUNT/$ITEM" ] || { echo "✗ DMG is missing $ITEM" >&2; LAYOUT_OK=0; }
+done
+codesign --verify --strict --deep "$CHECK_MOUNT/DotSync.app" || LAYOUT_OK=0
+detach_retry "$CHECK_MOUNT"
+[ "$LAYOUT_OK" = 1 ] || exit 1
 
 rm -rf "$STAGING_DIR"
 
