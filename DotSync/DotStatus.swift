@@ -31,7 +31,7 @@ struct DotStatus: Decodable, Equatable {
 }
 
 enum Health {
-    case ok, syncing, attention, broken
+    case ok, syncing, attention, broken, off
 
     var symbol: String {
         switch self {
@@ -39,6 +39,7 @@ enum Health {
         case .syncing: "arrow.triangle.2.circlepath.circle.fill"
         case .attention: "exclamationmark.arrow.triangle.2.circlepath"
         case .broken: "xmark.octagon"
+        case .off: "minus.circle"
         }
     }
 }
