@@ -191,7 +191,8 @@ struct MenuView: View {
         let alert = NSAlert()
         alert.alertStyle = .critical
         alert.messageText = "Désinstaller les dotfiles de ce Mac ?"
-        alert.informativeText = "Chaque lien vers ~/.dotfiles redevient un vrai fichier avec son contenu actuel, "
+        alert.informativeText = "Une dernière synchro pousse d'abord les changements locaux sur GitHub. "
+            + "Puis chaque lien vers ~/.dotfiles redevient un vrai fichier avec son contenu actuel, "
             + "la synchro auto s'arrête, et ~/.dotfiles, ~/.config/dotfiles (secrets compris) et le journal "
             + "partent à la Corbeille. Le dépôt GitHub et les autres Macs ne sont pas touchés."
         alert.accessoryView = outputView(preview.output)

@@ -77,8 +77,10 @@ final class DotService {
         let result = await run(args)
         if !dryRun { isSyncing = false }
         if !dryRun && result.code == 0 {
-            // only the moves matter afterwards, not the per-path listing
-            lastOutput = result.output.split(separator: "\n").filter { !$0.hasPrefix("  = ") }.joined(separator: "\n")
+            // only the moves matter afterwards: drop the per-path listing and gitleaks progress
+            lastOutput = result.output.split(separator: "\n")
+                .filter { !$0.hasPrefix("  = ") && !$0.contains(" INF ") }
+                .joined(separator: "\n")
             uninstalled = true
             timer?.invalidate()
             timer = nil
