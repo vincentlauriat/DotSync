@@ -6,16 +6,16 @@
     <description>DotSync release feed</description>
     <language>en</language>
     <item>
-      <title>v1.0.1</title>
-      <pubDate>Fri, 09 Oct 2026 08:45:50 +0200</pubDate>
-      <sparkle:version>2</sparkle:version>
-      <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+      <title>v1.1.0</title>
+      <pubDate>Tue, 10 Nov 2026 00:17:55 +0100</pubDate>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/DotSync/releases/tag/v1.0.1</sparkle:releaseNotesLink>
+      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/DotSync/releases/tag/v1.1.0</sparkle:releaseNotesLink>
       <enclosure
-        url="https://github.com/vincentlauriat/DotSync/releases/download/v1.0.1/DotSync-1.0.1.dmg"
+        url="https://github.com/vincentlauriat/DotSync/releases/download/v1.1.0/DotSync-1.1.0.dmg"
         type="application/octet-stream"
-        sparkle:edSignature="ysriFsI+6ZN07VbZDLrGJRBX/pFLyF4WaINGbwAW2WMj7rDn3G9JNSlYcBIBmEpo+jPIy70kM1s7z8CN5ItUBg==" length="2120800" />
+        sparkle:edSignature="pBH1sWvzBY7Cp+E1MDdCInfPsU8o9yymazwZ2Y1a02y7HTAW9Gl52EgeC0wduiiwVvNfu+2RH26c9LFPPoEjAw==" length="2158312" />
     </item>
   </channel>
 </rss>

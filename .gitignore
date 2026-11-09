@@ -45,3 +45,4 @@ PLAN.md
 .sparkle-tools/
 release/
 release-run.log
+.dmgbuild-venv/
