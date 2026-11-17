@@ -43,6 +43,7 @@ DotSync/
 ├── DotStatus.swift    # Codable mirror of `dot status --json` + health
 └── MenuView.swift     # menu UI
 Scripts/make-app-icon.swift  # draws the icon (ring of sync arrows, 4 Macs, central dot)
-Scripts/release.sh     # build → sign → DMG → notarize → staple → Sparkle appcast
+Scripts/release.sh     # build → sign → DMG (dmgbuild) → notarize → staple → Sparkle appcast
+Scripts/dmg-settings.py, dmgbuild-requirements.txt  # DMG Finder layout, hash-pinned dmgbuild
 project.yml            # XcodeGen
 ```
